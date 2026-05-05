@@ -1,8 +1,11 @@
 name: Daily Sheet Update
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight
+    - cron: '*/30 * * * *' # Runs every 30 minutes
   workflow_dispatch: # Allows you to run it manually
+
+permissions:
+  contents: write
 
 jobs:
   build:

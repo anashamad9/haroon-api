@@ -1,23 +1,41 @@
+import os
+from urllib.error import HTTPError, URLError
+
 import pandas as pd
-import json
 
-# Your Sheet ID
-SHEET_ID = "1T-wU4Nr-lilL5wOP5P2j-xEK3INp6BcNd05ae7qlC8g"
+SHEET_ID = os.environ.get("GOOGLE_SHEET_ID", "1T-wU4Nr-lilL5wOP5P2j-xEK3INp6BcNd05ae7qlC8g")
 
-# The 3 Tabs and their GIDs (based on your sheet)
 TABS = {
     "pending": "0",
     "approved": "763618369",
-    "old_pending": "1085594627" # Example GID - update if different
+    "old_pending": "1085594627",
 }
 
+
+def read_sheet_csv(sheet_id: str, gid: str) -> pd.DataFrame:
+    urls = [
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}",
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&gid={gid}",
+    ]
+    last_error = None
+    for url in urls:
+        try:
+            return pd.read_csv(url)
+        except (HTTPError, URLError, ValueError) as err:
+            last_error = err
+            continue
+    raise RuntimeError(f"failed to fetch gid={gid}: {last_error}")
+
+
+updated = 0
 for name, gid in TABS.items():
-    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={gid}"
-    df = pd.read_csv(url)
-    
-    # Convert to JSON
-    result = df.to_json(orient="records")
-    
-    # Save file
-    with open(f"{name}.json", "w") as f:
-        f.write(result)
+    try:
+        df = read_sheet_csv(SHEET_ID, gid)
+        df.to_json(f"{name}.json", orient="records")
+        updated += 1
+        print(f"updated {name}.json")
+    except Exception as err:
+        print(f"::warning title=Tab skipped::{name} (gid={gid}) -> {err}")
+
+if updated == 0:
+    raise SystemExit("No JSON files were updated. Check sheet sharing and GIDs.")
