@@ -1,0 +1,26 @@
+name: Daily Sheet Update
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch: # Allows you to run it manually
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install pandas
+      - name: Run Update
+        run: python update_sheets.py
+      - name: Commit and Push
+        run: |
+          git config --global user.name 'SheetBot'
+          git config --global user.email 'bot@github.com'
+          git add *.json
+          git commit -m "Daily JSON update" || exit 0
+          git push
