@@ -35,10 +35,10 @@ for name, gid in TABS.items():
         updated += 1
         print(f"updated {name}.json")
     except Exception as err:
-        # Keep endpoint alive even if one tab fails to parse/fetch.
         with open(f"{name}.json", "w", encoding="utf-8") as f:
             f.write("[]")
         print(f"::warning title=Tab skipped::{name} (gid={gid}) -> {err}")
 
 if updated == 0:
     print("::warning title=All tabs failed::Wrote empty JSON files to avoid 404 endpoints.")
+            # Keep endpoint alive even if one tab fails to parse/fetch.hh
